@@ -27,3 +27,20 @@ def validate_constraints(feature_model):
         by_location = any(c.name == "ByLocation" for c in filtered.children)
         if by_location and not location:
             raise Exception("Location feature is required for ByLocation filtering!")
+
+
+def validate_xor_group(features):
+    """
+    Validates that only one feature in an XOR group is selected.
+    
+    Args:
+        features (list): A list of features that belong to an XOR group.
+        
+    Returns:
+        bool: True if the XOR group is valid (only one feature selected), else False.
+    """
+    selected = [feature for feature in features if feature.selected]  # Assuming `selected` is a boolean attribute
+    if len(selected) > 1:
+        print("Error: Only one feature can be selected in an XOR group.")
+        return False
+    return True
