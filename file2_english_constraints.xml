@@ -1,0 +1,11 @@
+<featureModel>
+    <feature name="Application" mandatory="true">
+        <feature name="Catalog" mandatory="true"/>
+        <feature name="Location"/>
+    </feature>
+    <constraints>
+        <constraint>
+            <englishStatement>The Location feature requires the Catalog feature.</englishStatement>
+        </constraint>
+    </constraints>
+</featureModel>

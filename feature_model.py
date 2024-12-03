@@ -1,10 +1,13 @@
+import xml.etree.ElementTree as ET
+
 class Feature:
     """
     Represents a feature in the feature model.
     """
-    def __init__(self, name, mandatory=False, children=None):
+    def __init__(self, name, mandatory=False, children=None,group_type=None):
         self.name = name
         self.mandatory = mandatory
+        self.group_type = group_type  # Group type can be "XOR", "OR", or None
         self.children = children or []
 
     def add_child(self, feature):
@@ -20,27 +23,15 @@ class Feature:
         return f"Feature(name={self.name}, mandatory={self.mandatory}, children={len(self.children)})"
 
 
-# Create the feature model hierarchy
-def create_feature_model():
+def print_feature_hierarchy(feature, depth=0):
     """
-    Creates and returns the feature model hierarchy.
+    Prints the feature hierarchy in a readable format.
 
-    Returns:
-        Feature: The root feature of the feature model.
+    Args:
+        feature (Feature): The current feature.
+        depth (int): The level of indentation for child features.
     """
-    # Root feature
-    application = Feature("Application", mandatory=True)
-
-    # Catalog and its child features
-    catalog = Feature("Catalog", mandatory=True)
-    filtered = Feature("Filtered", mandatory=True)
-    filtered.add_child(Feature("ByDiscount"))
-    filtered.add_child(Feature("ByWeather"))
-    filtered.add_child(Feature("ByLocation"))
-    catalog.add_child(filtered)
-
-    # Add Catalog to Application
-    application.add_child(catalog)
-
-    # Return the root feature
-    return application
+    indent = "  " * depth
+    print(f"{indent}- {feature.name} (Mandatory: {feature.mandatory}, Group Type: {feature.group_type})")
+    for child in feature.children:
+        print_feature_hierarchy(child, depth + 1)

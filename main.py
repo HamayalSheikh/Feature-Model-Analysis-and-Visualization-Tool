@@ -1,15 +1,28 @@
-from xml_parser import load_and_parse_xml
-from feature_model import create_feature_model
+from xml_parser import create_feature_model, load_and_parse_xml
+from feature_model import print_feature_hierarchy
+from xml_parser import load_and_parse_xml, parse_constraints
 # from constraints import validate_constraints
 # from logic_translator import translate_to_logic
 # from mwp_calculator import calculate_mwp
 # from visualizer import start_visualization
 
 def main():
-    # Step 1: Parse and Validate XML
+    # Step 1: Load and Parse the feature model from XML
+    print("Loading feature model...")
+    # xml_file_path = 'feature-model.xml'
+    xml_file_path = 'file3_boolean_constraints.xml'
     print("Parsing the feature model...")
-    xml_file_path = 'feature-model.xml'
-    load_and_parse_xml(xml_file_path)
+    xml_root, root_feature = load_and_parse_xml(xml_file_path)
+
+    # Step 2: Parse and display cross-tree constraints
+    print("\nParsing constraints...")
+    constraints = parse_constraints(xml_root)
+    print("Constraints:", constraints)
+
+    # Step 3: Display the feature hierarchy
+    print("\nFeature Model Hierarchy:")
+    print_feature_hierarchy(root_feature)
+
 
     # # Step 2: Translate to Propositional Logic
     # logic = translate_to_logic(xml_data)
@@ -24,24 +37,12 @@ def main():
     Main function to initialize and display the feature model hierarchy.
     """
     # Create the feature model
-    root_feature = create_feature_model()
+    root_feature = create_feature_model(xml_file_path)
 
     # Display the feature model hierarchy
     print("Feature Model Hierarchy:")
     print_feature_hierarchy(root_feature)
 
-def print_feature_hierarchy(feature, depth=0):
-    """
-    Prints the feature hierarchy in a readable format.
-
-    Args:
-        feature (Feature): The current feature.
-        depth (int): The level of indentation for child features.
-    """
-    indent = "  " * depth
-    print(f"{indent}- {feature.name} (Mandatory: {feature.mandatory})")
-    for child in feature.children:
-        print_feature_hierarchy(child, depth + 1)
 
 
 if __name__ == "__main__":

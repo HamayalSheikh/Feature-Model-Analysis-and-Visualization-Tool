@@ -1,0 +1,25 @@
+<featureModel>
+    <feature name="Application" mandatory="true">
+        <feature name="Catalog" mandatory="true" group="xor"/>
+        <feature name="Location" group="or"/>
+        <!-- <feature name="Catalog" mandatory="true"/>
+        <feature name="Location"/> -->
+    </feature>
+    <constraints>
+    <constraint>
+        <englishStatement>The Location feature is required to filter the catalog by location.</englishStatement>
+    </constraint>
+    <constraint>
+        <booleanExpression>Location -> Catalog</booleanExpression>
+    </constraint>
+    <constraint>
+        <englishStatement>Location excludes Payment</englishStatement>
+    </constraint>
+</constraints>
+
+    <!-- <constraints>
+        <constraint>
+            <booleanExpression>Location -> Catalog</booleanExpression>
+        </constraint>
+    </constraints> -->
+</featureModel>

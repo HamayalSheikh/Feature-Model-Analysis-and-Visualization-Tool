@@ -1,0 +1,11 @@
+<featureModel>
+    <feature name="Application" mandatory="true">
+        <feature name="Catalog" mandatory="true">
+            <feature name="Filtered" mandatory="true">
+                <feature name="ByDiscount"/>
+                <feature name="ByWeather"/>
+                <feature name="ByLocation"/>
+            </feature>
+        </feature>
+    </feature>
+</featureModel>
