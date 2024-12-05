@@ -1,0 +1,17 @@
+/* .rct-icon-expand-close,
+.rct-icon-expand-open {
+    font-size: 25px;
+    font-weight: bold;
+    color: black;
+    cursor: pointer;
+    /* change position and take it left by 10px */
+    /* position: relative;
+    left: -10px;
+
+}  */
+
+/* CSS for mandatory features */
+.mandatory-icon {
+    color: red !important;
+}
+
