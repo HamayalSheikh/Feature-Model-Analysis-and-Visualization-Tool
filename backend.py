@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from flask_cors import CORS 
+from flask_cors import CORS
 from xml.etree.ElementTree import ParseError
 from xml_parser import load_and_parse_xml, parse_constraints
 
@@ -11,12 +11,11 @@ def parse_xml():
     try:
         # Get the XML data from the request
         xml_data = request.json.get("xml")
-        
-        # Save the XML data to a temporary file for parsing
-        # temp_file = "feature_model.xml"
-        temp_file = xml_data
-        # with open(temp_file, "w") as file:
-        #     file.write(xml_data)
+        temp_file = "feature_model_temp.xml"
+
+        # Write XML to a temporary file for parsing
+        with open(temp_file, "w") as file:
+            file.write(xml_data)
 
         # Parse the XML and constraints
         root, root_feature = load_and_parse_xml(temp_file)
