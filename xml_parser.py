@@ -1,29 +1,49 @@
 import xml.etree.ElementTree as ET
 from feature_model import Feature
 
-def parse_features(element):
+def parse_features(element, parent_path=""):
     """
     Recursively parses features from an XML element and builds the feature hierarchy.
-
+    
     Args:
         element (ET.Element): The current XML element.
-
+        parent_path (str): The hierarchical path to the current feature (used for uniqueness).
+    
     Returns:
         Feature: A Feature instance representing the parsed element.
     """
-    feature_name = element.attrib.get("name")
+    feature_name = element.attrib.get("name", "Group")
     mandatory = element.attrib.get("mandatory", "false").lower() == "true"
     group_type = element.attrib.get("group", "").lower()
 
-    # Create the current feature
-    feature = Feature(name=feature_name, mandatory=mandatory, group_type=group_type)
+    # Generate a unique path for this node
+    unique_path = f"{parent_path}/{feature_name}" if parent_path else feature_name
 
-    # Parse child features
-    for child in element.findall('feature'):
-        child_feature = parse_features(child)
-        feature.add_child(child_feature)
+    # Create the current feature
+    feature = Feature(name=unique_path, mandatory=mandatory, group_type=group_type)
+
+    # Process child features
+    for index, child in enumerate(element, start=1):
+        if child.tag == "group":  # Handle groups explicitly
+            group_features = []
+            group_type = child.attrib.get("type", "and").lower()
+
+            # Parse all features within this group
+            for group_child in child.findall("feature"):
+                group_features.append(parse_features(group_child, parent_path=unique_path))
+
+            # Add the group to the feature
+            group_feature = Feature(name=f"{unique_path}/Group ({group_type}-{index})", mandatory=False)
+            for gf in group_features:
+                group_feature.add_child(gf)
+            feature.add_child(group_feature)
+        elif child.tag == "feature":  # Standard feature processing
+            child_feature = parse_features(child, parent_path=unique_path)
+            feature.add_child(child_feature)
 
     return feature
+
+
 
 # Create the feature model hierarchy
 def create_feature_model(file_path):
