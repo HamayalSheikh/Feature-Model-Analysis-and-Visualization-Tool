@@ -12,34 +12,48 @@ def parse_features(element, parent_path=""):
     Returns:
         Feature: A Feature instance representing the parsed element.
     """
-    feature_name = element.attrib.get("name", "Group")
+    # feature_name = element.attrib.get("name", "Group")
+    feature_name = element.attrib.get("name")
     mandatory = element.attrib.get("mandatory", "false").lower() == "true"
     group_type = element.attrib.get("group", "").lower()
 
     # Generate a unique path for this node
-    unique_path = f"{parent_path}/{feature_name}" if parent_path else feature_name
+    # unique_path = f"{parent_path}/{feature_name}" if parent_path else feature_name
 
     # Create the current feature
-    feature = Feature(name=unique_path, mandatory=mandatory, group_type=group_type)
+    # feature = Feature(name=unique_path, mandatory=mandatory, group_type=group_type)
+    feature = Feature(name=feature_name, mandatory=mandatory, group_type=group_type)
 
-    # Process child features
-    for index, child in enumerate(element, start=1):
-        if child.tag == "group":  # Handle groups explicitly
-            group_features = []
-            group_type = child.attrib.get("type", "and").lower()
 
-            # Parse all features within this group
-            for group_child in child.findall("feature"):
-                group_features.append(parse_features(group_child, parent_path=unique_path))
 
-            # Add the group to the feature
-            group_feature = Feature(name=f"{unique_path}/Group ({group_type}-{index})", mandatory=False)
-            for gf in group_features:
-                group_feature.add_child(gf)
-            feature.add_child(group_feature)
-        elif child.tag == "feature":  # Standard feature processing
-            child_feature = parse_features(child, parent_path=unique_path)
-            feature.add_child(child_feature)
+    for child in element.findall("feature"):
+        child_feature = parse_features(child)
+        feature.add_child(child_feature)
+
+    for group in element.findall("group"):
+        group_type = group.attrib.get("type", "").lower()
+        group_feature = Feature(name=f"{feature_name}-Group-{group_type}", group_type=group_type)
+        for group_child in group.findall("feature"):
+            group_feature.add_child(parse_features(group_child))
+        feature.add_child(group_feature)
+    # # Process child features
+    # for index, child in enumerate(element, start=1):
+    #     if child.tag == "group":  # Handle groups explicitly
+    #         group_features = []
+    #         group_type = child.attrib.get("type", "and").lower()
+
+    #         # Parse all features within this group
+    #         for group_child in child.findall("feature"):
+    #             group_features.append(parse_features(group_child, parent_path=feature_name))
+
+    #         # Add the group to the feature
+    #         group_feature = Feature(name=f"{feature_name}/Group ({group_type}-{index})", mandatory=False)
+    #         for gf in group_features:
+    #             group_feature.add_child(gf)
+    #         feature.add_child(group_feature)
+    #     elif child.tag == "feature":  # Standard feature processing
+    #         child_feature = parse_features(child, parent_path=feature_name)
+    #         feature.add_child(child_feature)
 
     return feature
 
@@ -129,7 +143,8 @@ def parse_constraints(root):
         # Parse English constraints
         english_statement = constraint.find("englishStatement")
         if english_statement is not None and english_statement.text:
-            text = english_statement.text.lower().strip()
+            # text = english_statement.text.lower().strip()
+            text = english_statement.text.strip()
             print("Parsed statement (English):", text)
 
             # Handle "requires" or "required" cases
@@ -137,18 +152,21 @@ def parse_constraints(root):
                 parts = text.split("requires" if "requires" in text else "required")
                 if len(parts) == 2:
                     print("Parts after split:", parts)
-                    constraints.append((parts[0].strip(), parts[1].strip(), "requires"))
+                    constraints.append(f"{parts[0].strip()} -> {parts[1].strip()}")
+                    # constraints.append((parts[0].strip(), parts[1].strip(), "requires"))
             elif "excludes" in text:
                 parts = text.split("excludes")
                 print("Parts after split (excludes):", parts)
-                constraints.append((parts[0].strip(), parts[1].strip(), "excludes"))
+                constraints.append(f"{parts[0].strip()} -> !{parts[1].strip()}")
+                # constraints.append((parts[0].strip(), parts[1].strip(), "excludes"))
 
         # Parse Boolean constraints
         boolean_expression = constraint.find("booleanExpression")
         if boolean_expression is not None and boolean_expression.text:
             text = boolean_expression.text.strip()
             print("Parsed statement (Boolean):", text)
-            constraints.append((text, None, "boolean"))
+            constraints.append(text)
+            # constraints.append((text, None, "boolean"))
 
     return constraints
 

@@ -4,10 +4,11 @@ class Feature:
     """
     Represents a feature in the feature model.
     """
-    def __init__(self, name, mandatory=False, children=None,group_type=None):
+    def __init__(self, name, mandatory=False, children=None,group_type=None,parent=None):
         self.name = name
         self.mandatory = mandatory
         self.group_type = group_type  # Group type can be "XOR", "OR", or None
+        # self.parent = parent
         self.children = children or []
 
     def add_child(self, feature):
