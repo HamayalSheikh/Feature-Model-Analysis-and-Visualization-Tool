@@ -123,8 +123,8 @@ def translate_to_logic(feature, parent_name=None, logic=None):
         if child.mandatory:
             logic["mandatory"].append(f"{feature.name} -> {child.name}")
             logic["children_to_parent"].append(f"{child.name} -> {feature.name}")
-        # else:
-        #     logic["children_to_parent"].append(f"{child.name} -> {feature.name}")
+        else:
+            logic["children_to_parent"].append(f"{child.name} -> {feature.name}")
 
         # OR Group
         if child.group_type == "or":
@@ -139,11 +139,8 @@ def translate_to_logic(feature, parent_name=None, logic=None):
             )
             logic["xor"].append(f"{child.name} -> ({xor_logic})")
 
-# Recurse for child features (skip groups themselves)
-        if child.group_type not in ["xor", "or"]:
-            translate_to_logic(child, feature.name, logic)
-        # # Recurse for child features
-        # translate_to_logic(child, feature.name, logic)
+        # Recurse for child features
+        translate_to_logic(child, feature.name, logic)
 
     return logic
 
@@ -170,5 +167,4 @@ def format_and_print_logic(logic):
     print("\n//or")
     print(" &\n".join(logic["or"]) + " &")
 
-    print("\n//constraint")
-    print(" &\n".join(logic["constraints"]) + " &")
+    
