@@ -127,6 +127,100 @@ def parse_features_with_relationships(element):
 
     return feature
 
+# def parse_constraints(root):
+#     """
+#     Parses cross-tree constraints from the XML.
+
+#     Args:
+#         root (ET.Element): The root XML element.
+
+#     Returns:
+#         list: A list of constraints in tuple format (e.g., ("A", "B", "requires")).
+#     """
+#     constraints = []
+
+#     for constraint in root.findall(".//constraints/constraint"):
+#         # Parse English constraints
+#         english_statement = constraint.find("englishStatement")
+#         if english_statement is not None and english_statement.text:
+#             # text = english_statement.text.lower().strip()
+#             text = english_statement.text.strip()
+#             print("Parsed statement (English):", text)
+
+#             # Handle "requires" or "required" cases
+#             if "requires" in text or "required" in text:
+#                 parts = text.split("requires" if "requires" in text else "required")
+#                 if len(parts) == 2:
+#                     print("Parts after split:", parts)
+#                     constraints.append(f"{parts[0].strip()} -> {parts[1].strip()}")
+#                     # constraints.append((parts[0].strip(), parts[1].strip(), "requires"))
+#             elif "excludes" in text:
+#                 parts = text.split("excludes")
+#                 print("Parts after split (excludes):", parts)
+#                 constraints.append(f"{parts[0].strip()} -> !{parts[1].strip()}")
+#                 # constraints.append((parts[0].strip(), parts[1].strip(), "excludes"))
+
+#         # Parse Boolean constraints
+#         boolean_expression = constraint.find("booleanExpression")
+#         if boolean_expression is not None and boolean_expression.text:
+#             text = boolean_expression.text.strip()
+#             print("Parsed statement (Boolean):", text)
+#             constraints.append(text)
+#             # constraints.append((text, None, "boolean"))
+
+#     return constraints
+
+# def parse_constraints(root):
+#     """
+#     Parses cross-tree constraints from the XML.
+
+#     Args:
+#         root (ET.Element): The root XML element.
+
+#     Returns:
+#         list: A list of constraints in propositional logic format.
+#     """
+#     constraints = []
+
+#     for constraint in root.findall(".//constraints/constraint"):
+#         # Parse English constraints
+#         english_statement = constraint.find("englishStatement")
+#         if english_statement is not None and english_statement.text:
+#             text = english_statement.text.strip()
+#             print("Parsed statement (English):", text)
+
+#             # Translate English constraints into propositional logic
+#             if "requires" in text or "required" in text:
+#                 parts = text.split("requires" if "requires" in text else "required")
+#                 if len(parts) == 2:
+#                     # Check if a propositional logic translation exists
+#                     user_input = input(f"Translate '{text}' into propositional logic (e.g., A → B): ")
+#                     if not user_input:
+#                         # If no translation provided, default to the parsed version
+#                         constraints.append(f"{parts[0].strip()} -> {parts[1].strip()}")
+#                     else:
+#                         constraints.append(user_input)
+            
+#             elif "excludes" in text:
+#                 parts = text.split("excludes")
+#                 if len(parts) == 2:
+#                     # Check if a propositional logic translation exists
+#                     user_input = input(f"Translate '{text}' into propositional logic (e.g., A -> !B): ")
+#                     if not user_input:
+#                         # If no translation provided, default to the parsed version
+#                         constraints.append(f"{parts[0].strip()} -> !{parts[1].strip()}")
+#                     else:
+#                         constraints.append(user_input)
+
+#         # Parse Boolean constraints (already in propositional logic format)
+#         boolean_expression = constraint.find("booleanExpression")
+#         if boolean_expression is not None and boolean_expression.text:
+#             text = boolean_expression.text.strip()
+#             print("Parsed statement (Boolean):", text)
+#             constraints.append(text)
+
+#     return constraints
+
 def parse_constraints(root):
     """
     Parses cross-tree constraints from the XML.
@@ -135,7 +229,7 @@ def parse_constraints(root):
         root (ET.Element): The root XML element.
 
     Returns:
-        list: A list of constraints in tuple format (e.g., ("A", "B", "requires")).
+        list: A list of constraints in propositional logic format.
     """
     constraints = []
 
@@ -143,30 +237,36 @@ def parse_constraints(root):
         # Parse English constraints
         english_statement = constraint.find("englishStatement")
         if english_statement is not None and english_statement.text:
-            # text = english_statement.text.lower().strip()
             text = english_statement.text.strip()
-            print("Parsed statement (English):", text)
+            print(f"Parsed statement (English): {text}")
 
-            # Handle "requires" or "required" cases
+            # Check if the statement contains "requires" or "required"
             if "requires" in text or "required" in text:
                 parts = text.split("requires" if "requires" in text else "required")
                 if len(parts) == 2:
-                    print("Parts after split:", parts)
-                    constraints.append(f"{parts[0].strip()} -> {parts[1].strip()}")
-                    # constraints.append((parts[0].strip(), parts[1].strip(), "requires"))
+                    user_input = input(f"Translate '{text}' into propositional logic (e.g., A → B): ")
+                    if not user_input:
+                        # Default translation if the user doesn't provide one
+                        constraints.append(f"{parts[0].strip()} → {parts[1].strip()}")
+                    else:
+                        constraints.append(user_input)
+
+            # Handle "excludes" constraints
             elif "excludes" in text:
                 parts = text.split("excludes")
-                print("Parts after split (excludes):", parts)
-                constraints.append(f"{parts[0].strip()} -> !{parts[1].strip()}")
-                # constraints.append((parts[0].strip(), parts[1].strip(), "excludes"))
+                if len(parts) == 2:
+                    user_input = input(f"Translate '{text}' into propositional logic (e.g., A → !B): ")
+                    if not user_input:
+                        # Default translation if the user doesn't provide one
+                        constraints.append(f"{parts[0].strip()} → !{parts[1].strip()}")
+                    else:
+                        constraints.append(user_input)
 
-        # Parse Boolean constraints
+        # Parse Boolean constraints (already in propositional logic format)
         boolean_expression = constraint.find("booleanExpression")
         if boolean_expression is not None and boolean_expression.text:
             text = boolean_expression.text.strip()
-            print("Parsed statement (Boolean):", text)
+            print(f"Parsed statement (Boolean): {text}")
             constraints.append(text)
-            # constraints.append((text, None, "boolean"))
 
     return constraints
-
