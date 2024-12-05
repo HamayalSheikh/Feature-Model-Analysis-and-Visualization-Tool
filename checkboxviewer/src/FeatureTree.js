@@ -9,16 +9,14 @@ const FeatureTree = () => {
     const [constraints, setConstraints] = useState([]);
 
     const xmlData = "feature_model.xml"
+
     // Format tree data from backend response
     const formatTreeData = useCallback((features) => {
-        // Deep clone to avoid mutation issues
-        const processNode = (node) => {
+        const processNode = (node, parent = null) => {
             let type = ""
 
-            //check the name, if it has '(xor' then it is a xor group, if it has '(or' then it is an or group
             if (node.label.includes("(xor")) {
                 type = "xor"
-
             } else if (node.label.includes("(or")) {
                 type = "or"
             }
@@ -27,13 +25,13 @@ const FeatureTree = () => {
                 label: node.label,
                 value: node.value,
                 mandatory: node.mandatory || false,
-                groupType: type || null
+                groupType: type,
+                parent: parent
             };
-
 
             // Process children recursively
             if (node.children && node.children.length > 0) {
-                formattedNode.children = node.children.map(processNode);
+                formattedNode.children = node.children.map(child => processNode(child, formattedNode));
             }
 
             return formattedNode;
@@ -42,10 +40,10 @@ const FeatureTree = () => {
         return features.map(processNode);
     }, []);
 
-    // Fetch data from backend
+    // Fetch data from backend (remains the same as in previous version)
     useEffect(() => {
         if (!xmlData) return;
-
+    
         fetch("http://127.0.0.1:5000/parse-xml", {
             method: "POST",
             headers: {
@@ -61,130 +59,144 @@ const FeatureTree = () => {
             })
             .then((data) => {
                 console.log("Received data:", data);
-
-                // Ensure treeData exists and is valid
+    
                 if (!data.treeData || typeof data.treeData !== "object" || !data.treeData.children) {
                     console.error("Invalid or missing 'treeData' in response:", data);
                     setTreeData([]);
                     return;
                 }
-
-                // Set tree data
-                setTreeData([data.treeData]); // Wrap treeData in an array for root processing
-
-                // Format constraints
+    
+                const formattedTreeData = formatTreeData([data.treeData]);
+                setTreeData(formattedTreeData);
+    
                 const formattedConstraints = Array.isArray(data.constraints)
                     ? data.constraints
                     : [];
                 setConstraints(formattedConstraints);
             })
             .catch((error) => console.error("Error fetching XML data:", error));
-    }, [xmlData]);
-
-
-    // Check if a node can be selected based on constraints
-    const canSelectNode = (value, currentChecked) => {
-        // Check XOR group constraints
-        const findNodeByValue = (nodes, targetValue) => {
-            for (const node of nodes) {
-                if (node.value === targetValue) return node;
-                if (node.children) {
-                    const found = findNodeByValue(node.children, targetValue);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
-
-        const targetNode = findNodeByValue(treeData, value);
-
-        // Check XOR group constraint
-        if (targetNode && targetNode.parent && targetNode.parent.groupType === 'xor') {
-            const xorSiblings = targetNode.parent.children;
-            const alreadySelectedSibling = xorSiblings.find(
-                sibling => currentChecked.includes(sibling.value)
-            );
-            return !alreadySelectedSibling;
-        }
-
-        return true;
-    };
+    }, [xmlData, formatTreeData]);
 
     const handleCheck = (value, isChecked) => {
+        const rootNode = treeData[0];
         let updatedChecked = [...checked];
 
         const updateNodeSelection = (node, isSelecting) => {
-            // Handle mandatory node deselection
-            if (!isSelecting && node.mandatory) {
-                updatedChecked = []; // Deselect root node and all nodes
+            // Special handling for root node
+            if (node.value === rootNode.value && !isSelecting) {
+                updatedChecked = [];
                 return;
             }
 
-            // Add or remove the node
+            if(isSelecting) {
+                if(node.mandatory) {
+                    updatedChecked = findMandatoryNodes(rootNode);
+                    updatedChecked.push(node.value);
+                    updatedChecked.push(node.parent.value);
+                    if(!updatedChecked.includes(rootNode.value)) {
+                        updatedChecked.push(rootNode.value);
+                    }
+                    return;
+                }
+            }
+
+            if(!isSelecting) {
+                //check if node is mandatory
+                if(node.mandatory) {
+                    updatedChecked = []
+                    return;
+                }
+            }
+
+            // If selecting root, only select mandatory nodes
+            if (node.value === rootNode.value && isSelecting) {
+                updatedChecked = findMandatoryNodes(node);
+                updatedChecked.push(node.value);
+                
+                return;
+            }
+
+            // Handle XOR constraint
+            if (node.parent?.groupType === "xor") {
+                if (isSelecting) {
+                    // Deselect other siblings in XOR group
+                    node.parent.children.forEach(sibling => {
+                        if (sibling.value !== node.value) {
+                            updatedChecked = updatedChecked.filter(v => v !== sibling.value);
+                        }
+                    });
+                }
+            }
+
+            // Add or remove the current node
             if (isSelecting) {
                 if (!updatedChecked.includes(node.value)) {
                     updatedChecked.push(node.value);
                 }
-            } else {
-                updatedChecked = updatedChecked.filter((v) => v !== node.value);
-            }
 
-            // Handle XOR constraint
-            if (isSelecting && node.parent?.groupType === "xor") {
-                node.parent.children.forEach((sibling) => {
-                    if (sibling.value !== node.value) {
-                        updatedChecked = updatedChecked.filter((v) => v !== sibling.value);
-                    }
-                });
-            }
-
-            // Recursively update children
-            if (node.children) {
-                node.children.forEach((child) => updateNodeSelection(child, isSelecting));
-            }
-
-            // If deselecting, check if parent needs to be deselected
-            if (!isSelecting) {
-                const parent = findParentFeature(node.value, treeData[0]);
-                if (parent) {
-                    const allChildrenDeselected = parent.children.every(
-                        (child) => !updatedChecked.includes(child.value)
-                    );
-                    if (allChildrenDeselected) {
-                        updatedChecked = updatedChecked.filter((v) => v !== parent.value);
-                    }
-                }
-            }
-
-            // If selecting, ensure mandatory parents are selected
-            if (isSelecting) {
-                let currentParent = findParentFeature(node.value, treeData[0]);
+                // Select mandatory parent nodes
+                let currentParent = node.parent;
                 while (currentParent) {
                     if (currentParent.mandatory && !updatedChecked.includes(currentParent.value)) {
                         updatedChecked.push(currentParent.value);
                     }
-                    currentParent = findParentFeature(currentParent.value, treeData[0]);
+                    currentParent = currentParent.parent;
+                }
+
+                // Select node's mandatory children
+                if (node.children) {
+                    node.children.forEach(child => {
+                        if (child.mandatory && !updatedChecked.includes(child.value)) {
+                            updatedChecked.push(child.value);
+                        }
+                    });
+                }
+            } else {
+                // Deselection logic
+                updatedChecked = updatedChecked.filter(v => v !== node.value);
+
+                // Check if parent needs to be deselected
+                if (node.parent) {
+                    const allChildrenDeselected = node.parent.children.every(
+                        child => !updatedChecked.includes(child.value)
+                    );
+                    if (allChildrenDeselected) {
+                        updatedChecked = updatedChecked.filter(v => v !== node.parent.value);
+                    }
                 }
             }
         };
 
-        // Handle root deselection
-        if (value === treeData[0]?.value && !isChecked) {
-            updatedChecked = []; // Clear all selections
-        } else {
-            const targetNode = findFeatureByValue(value, treeData[0]);
-            if (targetNode) {
-                updateNodeSelection(targetNode, isChecked);
-            }
+        // Find mandatory nodes recursively
+        const findMandatoryNodes = (node) => {
+            const mandatoryNodes = [];
+            
+            const traverse = (currentNode) => {
+                if (currentNode.mandatory) {
+                    mandatoryNodes.push(currentNode.value);
+                }
+                
+                if (currentNode.children) {
+                    currentNode.children.forEach(traverse);
+                }
+            };
+
+            traverse(node);
+            return mandatoryNodes;
+        };
+
+        // Find the target node
+        const targetNode = findFeatureByValue(value, rootNode);
+        
+        if (targetNode) {
+            updateNodeSelection(targetNode, isChecked);
         }
 
-        // Ensure uniqueness
+        // Ensure uniqueness and update state
         setChecked([...new Set(updatedChecked)]);
     };
 
-
-
-    // Existing helper functions
+    // Existing helper functions remain the same
     const findFeatureByValue = (value, node) => {
         if (node.value === value) return node;
         for (const child of node.children || []) {
@@ -239,7 +251,7 @@ const FeatureTree = () => {
     // Render tree nodes
     const renderNode = (node) => {
         return (
-            <div key={node.value}>
+            <div style={{marginLeft: "5px"}}key={node.value}>
                 <div style={{ display: "flex", alignItems: "center", margin: "5px 0" }}>
                     {/* Folder Expand Icon */}
                     {node.children && node.children.length > 0 && (
@@ -289,11 +301,14 @@ const FeatureTree = () => {
     }
 
     return (
+        
         <div>
             <h1>Feature Model</h1>
+            {console.log("treeData", treeData)}
             {treeData.map((rootNode) => renderNode(rootNode))}
         </div>
     );
 };
 
 export default FeatureTree;
+
