@@ -99,6 +99,8 @@ const FeatureTree = () => {
     const [constraints, setConstraints] = useState([]);
     const [error, setError] = useState(null);
     const [checkXOR, setCheckXOR] = useState(false);
+    const [english, setEnglish] = useState(false);
+    const [propositionalLogic, setPropositionalLogic] = useState(false);
 
     const formatTreeData = useCallback((features) => {
         const processNode = (node, parent = null) => {
@@ -179,17 +181,17 @@ const FeatureTree = () => {
         const payload = prepareValidationPayload();
 
         const validationPayload = {
-            mandatory: payload.mandatory || [], 
+            mandatory: payload.mandatory || [],
             or: payload.or || {},
             xor: payload.xor || {},
             and: payload.and || {},
             selected: payload.selected || {},
         };
-    
+
         // Log the payload to check if it's properly formed
         console.log("tree:", payload.tree);
         console.log("Validation Payload:", validationPayload);
-    
+
         try {
             // Send the validation request to the backend
             const response = await fetch("http://127.0.0.1:5000/validate-configuration", {
@@ -199,15 +201,15 @@ const FeatureTree = () => {
                 },
                 body: JSON.stringify(validationPayload),
             });
-    
+
             // Check if the response is valid
             if (!response.ok) {
                 throw new Error(`Validation failed: ${response.statusText}`);
             }
-    
+
             // Process the response from the backend
             const result = await response.json();
-    
+
             if (result.isValid) {
                 alert("Configuration is valid!");
             } else {
@@ -219,7 +221,29 @@ const FeatureTree = () => {
             alert("Failed to validate the configuration. Please try again.");
         }
     };
-    
+
+    const translate = async () => {
+        try {
+            const response = await fetch("http://127.0.0.1:5000/translate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ prompt: english }),
+            });
+            if (!response.ok) {
+                throw new Error(`Translation failed: ${response.statusText}`);
+            }
+            const result = await response.json();
+            console.log(result);
+            setPropositionalLogic(result);
+        }
+        catch (error) {
+            console.error("Error translating:", error.message);
+            alert("Failed to translate the configuration. Please try again.");
+        }
+    };
+
 
     const prepareValidationPayload = () => {
         const mandatoryNodes = [];
@@ -331,7 +355,7 @@ const FeatureTree = () => {
         });
 
         //manually add treedata into payload.tree to avoid circular structure error
-        
+
         return {
             tree: treeData,
             mandatory: mandatoryNodes,
@@ -383,18 +407,18 @@ const FeatureTree = () => {
             }
 
             // Handle XOR constraint
-            if(checkXOR){
-            if (node.parent?.groupType === "xor") {
-                if (isSelecting) {
-                    // Deselect other siblings in XOR group
-                    node.parent.children.forEach(sibling => {
-                        if (sibling.value !== node.value) {
-                            updatedChecked = updatedChecked.filter(v => v !== sibling.value);
-                        }
-                    });
+            if (checkXOR) {
+                if (node.parent?.groupType === "xor") {
+                    if (isSelecting) {
+                        // Deselect other siblings in XOR group
+                        node.parent.children.forEach(sibling => {
+                            if (sibling.value !== node.value) {
+                                updatedChecked = updatedChecked.filter(v => v !== sibling.value);
+                            }
+                        });
+                    }
                 }
             }
-        }
 
             // Add or remove the current node
             if (isSelecting) {
@@ -628,6 +652,19 @@ const FeatureTree = () => {
             </TreeWrapper>
             <br />
             <button onClick={validateSelection}>Validate Selection</button>
+            <br />
+            <br />
+            <input type="text" placeholder="Enter English" onChange={(e) => setEnglish(e.target.value)} /> 
+            <button onClick={translate}>Translate</button>
+            <br />
+            {propositionalLogic ? (
+                <div>
+                    <h1>Propositional Logic</h1>
+                    <p>{propositionalLogic}</p>
+                </div>
+            ) : (
+                "no translation available"
+            )}
         </Container>
     );
 };
