@@ -7,6 +7,8 @@ const FeatureTree = () => {
     const [expanded, setExpanded] = useState([]);
     const [treeData, setTreeData] = useState([]);
     const [constraints, setConstraints] = useState([]);
+    const [logic, setLogic] = useState([]);
+    const [mwp, setMwp] = useState([]);
 
     const xmlData = "feature_model.xml"
 
@@ -75,6 +77,37 @@ const FeatureTree = () => {
                 setConstraints(formattedConstraints);
             })
             .catch((error) => console.error("Error fetching XML data:", error));
+
+            fetch("http://127.0.0.1:5000/getData", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ xml: xmlData }),
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Error fetching XML data: ${response.statusText}`);
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then((data) => {
+                    console.log("Received data:", data);
+            
+                    // Check if "logic" exists and is a valid array
+                    if (!data.logic || typeof data.logic !== "object") {
+                        console.error("Invalid or missing 'logic' in response:", data);
+                        setLogic([]); // Reset logic state if invalid
+                        return;
+                    }
+            
+                    const formattedLogic = Array.isArray(data.logic) ? data.logic : [];
+                    setLogic(formattedLogic); // Update state with formatted logic
+                })
+                .catch((error) => {
+                    console.error("Error fetching data:", error.message);
+                });
+            
     }, [xmlData, formatTreeData]);
 
     const handleCheck = (value, isChecked) => {
@@ -306,6 +339,15 @@ const FeatureTree = () => {
             <h1>Feature Model</h1>
             {console.log("treeData", treeData)}
             {treeData.map((rootNode) => renderNode(rootNode))}
+
+            <h1>Constraints</h1>
+            <pre>{JSON.stringify(constraints, null, 2)}</pre>
+
+            <h1>Logic</h1>
+            <pre>{JSON.stringify(logic, null, 2)}</pre>
+
+            <h1>Checked</h1>
+            <pre>{JSON.stringify(checked, null, 2)}</pre>
         </div>
     );
 };

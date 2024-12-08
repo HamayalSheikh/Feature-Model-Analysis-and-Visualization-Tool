@@ -28,10 +28,11 @@ def get_mandatory_features(root_feature):
     recurse_features(root_feature)
     return mandatory_features
 
-def main():
+def main(xml_file_path):
     # Step 1: Load and Parse the feature model from XML
     print("Loading feature model...")
-    xml_file_path = 'feature-model.xml'
+    # xml_file_path = 'feature-model.xml'
+    
     # xml_file_path = 'featuremodel-1-wo-const.xml'
     print("Parsing the feature model...")
     xml_root, root_feature = load_and_parse_xml(xml_file_path)
@@ -61,6 +62,8 @@ def main():
     # Display the feature model hierarchy
     print("Feature Model Hierarchy:")
     print_feature_hierarchy(root_feature)
+
+    return constraints, logic, mwp
 
 
 if __name__ == "__main__":
