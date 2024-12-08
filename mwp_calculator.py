@@ -114,9 +114,21 @@ def calculate_mwp(logic_rules, mandatory_features):
     # Filter valid MWPs by checking against the logic rules
     mwps = []
     for subset in all_combinations:
-        if is_valid_mwp(subset, logic_rules, mandatory_features):
+        if is_valid_mwp(subset, logic_rules, mandatory_features, features):
             mwps.append(subset)
-
+    
+    if not mwps:
+        print("No valid MWPs found.")
+    # else go through them if they dont contain the mandatory features, remove them
+    else :
+        for mwp in mwps:
+            for mandatory in mandatory_features:
+                if mandatory not in mwp:
+                    mwps.remove(mwp)
+                    break
+    #         if rootname not in list(mwp):
+    #             mwps.remove(mwp)
+    # print(rootname)
     return mwps
 
 
@@ -131,12 +143,111 @@ def extract_features_from_logic_rules(logic_rules):
         set: A set of unique feature names.
     """
     features = set()
-    for rule in logic_rules:
-        features.update(rule.split())  # Split by space to extract features
+
+    # for rule in logic_rules[rule1]:
+    #     print("Rule:", rule)
+    #     features.update(rule.split(" -> "))  # Split by space to extract features
+    #     print("Features:", features)
+    #     if rule1 == "root":
+    #         break
+    
+    for rule in logic_rules["root"]:
+        print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        print("Features:", features)
+
+    for rule in logic_rules["mandatory"]:
+        print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        print("Features:", features)
+
+    for rule in logic_rules["children_to_parent"]:
+        print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        print("Features:", features)
+        if features == "->":
+            continue
+
+    for rule in logic_rules["xor"]:
+        print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        print("Features:", features)
+        if features == "->":
+            continue
+
+    for rule in logic_rules["or"]:
+        print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        print("Features:", features)
+        if features == "->":
+            continue
+        
+    for rule in logic_rules["constraints"]:
+        print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        print("Features:", features)
+        if features == "->":
+            continue
+    return {feature for feature in features if feature.isalnum()}  # Filter out logical operators
+
+def extract_features_from_logic_rules1(logic_rules):
+    """
+    Extracts unique feature names from the logic rules.
+    
+    Args:
+        logic_rules (list): A list of logic rules derived from the feature model.
+        
+    Returns:
+        set: A set of unique feature names.
+    """
+    features = set()
+
+    # for rule in logic_rules[rule1]:
+    #     print("Rule:", rule)
+    #     features.update(rule.split(" -> "))  # Split by space to extract features
+    #     print("Features:", features)
+    
+    for rule in logic_rules["root"]:
+        # print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        # print("Features:", features)
+
+    for rule in logic_rules["mandatory"]:
+        # print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        # print("Features:", features)
+
+    for rule in logic_rules["children_to_parent"]:
+        # print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        # print("Features:", features)
+        if features == "->":
+            continue
+
+    for rule in logic_rules["xor"]:
+        # print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        # print("Features:", features)
+        if features == "->":
+            continue
+
+    for rule in logic_rules["or"]:
+        # print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        # print("Features:", features)
+        if features == "->":
+            continue
+        
+    for rule in logic_rules["constraints"]:
+        # print("Rule:", rule)
+        features.update(rule.split(" -> "))  # Split by space to extract features
+        # print("Features:", features)
+        if features == "->":
+            continue
     return {feature for feature in features if feature.isalnum()}  # Filter out logical operators
 
 
-def is_valid_mwp(feature_set, logic_rules, mandatory_features):
+def is_valid_mwp(feature_set, logic_rules, mandatory_features, features):
     """
     Checks if a given feature set satisfies the logic rules.
     
@@ -151,24 +262,29 @@ def is_valid_mwp(feature_set, logic_rules, mandatory_features):
     if not mandatory_features.issubset(feature_set):
         return False
     
+    rules = ["root", "mandatory", "children_to_parent", "xor", "or", "constraints"]
+
     # Check each logic rule against the feature set
-    for rule in logic_rules:
+    for rule in feature_set:
         eval_rule = rule
         # Replace feature names with True/False based on the feature set
         for feature in feature_set:
-            eval_rule = eval_rule.replace(feature, "True")
-        for feature in extract_features_from_logic_rules([rule]) - feature_set:
+            if feature != "mandatory" and rule != "mandatory":
+                eval_rule = eval_rule.replace(feature, "True")
+        for feature in features - feature_set:
             eval_rule = eval_rule.replace(feature, "False")
         
          # Replace logical operators with Python equivalents
         eval_rule = eval_rule.replace("->", "<=").replace("|", " or ").replace("&", " and ")
+        # print("Eval Rule:", eval_rule)
 
         # Evaluate the rule
         try:
             if not eval(eval_rule):
                 return False
         except Exception as e:
-            print(f"Error evaluating rule '{rule}': {e}")
+            # print(f"Error evaluating rule '{rule}': {e}")
             return False
+        # break
 
     return True
