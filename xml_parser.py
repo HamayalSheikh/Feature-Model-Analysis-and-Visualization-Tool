@@ -90,6 +90,7 @@ def load_and_parse_xml(file_path):
     """
     tree = ET.parse(file_path)
     root = tree.getroot()
+    # get the name of the tree root
 
     # Skip the <featureModel> element and process its first child (<feature>)
     feature_element = root.find('feature')

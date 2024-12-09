@@ -2,9 +2,16 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from xml.etree.ElementTree import ParseError
 from xml_parser import load_and_parse_xml, parse_constraints
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 app = Flask(__name__)
 CORS(app, origins="http://localhost:3000")
+model = genai.GenerativeModel('gemini-1.5-flash')
+
 
 @app.after_request
 def add_cors_headers(response):
@@ -123,6 +130,19 @@ def validate_tree_configuration(mandatory_nodes, or_groups, xor_groups, and_grou
 
     return result
 
+
+@app.route('/translate', methods=['POST'])
+def translate():
+    try:
+        data = request.get_json()
+        prompt = data.get('prompt')
+        translate_prompt = f"Translate \"{prompt}\" from English to Propositional Logic. An example: . Make sure to not include any styles in the text, and add new line tags where needed as the response will be shown on another webpage."
+        translate = model.generate_content(translate_prompt)
+        print(translate.prompt_feedback)
+        return jsonify(translate.text), 200
+    except Exception as err:
+        print(f"Error translating: {err}")
+        return jsonify({"error": "Error translating from English to Propositional Logic. Please check logs for details."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

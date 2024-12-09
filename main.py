@@ -95,6 +95,7 @@ def main():
     # Step 3: Translate feature model into propositional logic
     print("\nTranslating to propositional logic...")
     logic = translate_to_logic(root_feature)
+
     print("Propositional Logic:")
     # Check if constraints are properly formatted before adding them
     if constraints:
@@ -116,7 +117,7 @@ def main():
     mwps = calculate_mwp(logic, mandatory_features)
 
     # Step 6: Display the MWP results
-    format_mwp_results(mwps)
+    format_mwp_results(mwps,  logic["root"] )
 
     # Step 8: Display MWPs
     # print("\nMinimum Working Products (MWPs):")
@@ -130,11 +131,30 @@ def main():
     print("Feature Model Hierarchy:")
     print_feature_hierarchy(root_feature)
 
-def format_mwp_results(mwps):
+def format_mwp_results(mwps, root):
+
+    unique_mwps = []
+    for mwp in mwps:
+        if mwp not in unique_mwps:
+            unique_mwps.append(mwp)
+
     print("\nCalculated Minimum Working Products (MWPs):")
-    for idx, mwp in enumerate(mwps, start=1):
-        print(f"MWP {idx}: {', '.join(sorted(mwp))}")
+    # for idx, mwp in enumerate(mwps, start=1):
+    #     print(f"MWP {idx}: {', '.join(sorted(mwp))}")
         # print(f"MWP {idx}: {sorted(mwp)}")
+    count=0
+    # get the first word in the first mwp in mwps
+    # rootValue = list(sorted(mwps[0]))[0]
+
+    for index, mwp in enumerate(unique_mwps, start=int(len(unique_mwps)*.8)):
+    # for index, mwp in enumerate(unique_mwps, start=1):
+        # if mwp contains the root, print it
+        if root[0] in mwp:
+            print(f"MWP {count+1}: {', '.join(sorted(mwp))}")
+            # print(f"MWP {index}: {', '.join(sorted(mwp))}")
+            count+=1
+        if count == 15:
+            break
 
 
 if __name__ == "__main__":
